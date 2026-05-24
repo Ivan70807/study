@@ -28,7 +28,7 @@ Python 3.x installed locally.
 
 A) Save your messy input logs inside input/raw-text.txt.
 
-B) Open your terminal at the root directory (alu-regex-data-extraction_YourUsername/).
+B) Open your terminal at the root directory (alu-regex-data-extraction_Ivan70807/).
 
 C) Run the following command:
    python src/main.py
