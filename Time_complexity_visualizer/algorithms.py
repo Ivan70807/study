@@ -1,12 +1,17 @@
+
 import random
 import sys
 
-# A couple of the sorts below (quick_sort especially) can recurse
-# deeper than Python's default limit on larger inputs.
+from stack import Stack, StackEmptyError
+from queue_ds import Queue
+
+
 sys.setrecursionlimit(10_000)
 
 
 def linear_search(n):
+    """O(n) — scan a list of size n for a value that isn't in it
+    (worst case: the loop never breaks early)."""
     arr = list(range(n))
     target = -1
     for value in arr:
@@ -145,6 +150,63 @@ def fibonacci_recursive(n):
     return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2)
 
 
+def stack_push_pop(n):
+    """O(n) — push n items onto a Stack, then pop them all back off."""
+    s = Stack()
+    for i in range(n):
+        s.push(i)
+    while not s.is_empty():
+        s.pop()
+
+
+def stack_balanced_parentheses(n):
+    """O(n) — build a balanced string of 2n parentheses, e.g.
+    "(((...)))", and validate it using a Stack. Classic textbook use
+    of a stack: push on '(', pop on ')', valid iff the stack empties
+    out exactly at the end."""
+    text = "(" * n + ")" * n
+    s = Stack()
+    for ch in text:
+        if ch == "(":
+            s.push(ch)
+        else:
+            try:
+                s.pop()
+            except StackEmptyError:
+                return False
+    return s.is_empty()
+
+
+def queue_enqueue_dequeue(n):
+    """O(n) — enqueue n items onto a Queue, then dequeue them all."""
+    q = Queue()
+    for i in range(n):
+        q.enqueue(i)
+    while not q.is_empty():
+        q.dequeue()
+
+
+def queue_bfs_traversal(n):
+    """O(n) — breadth-first traversal of a simple n-node chain graph
+    (0 -> 1 -> 2 -> ... -> n-1), using a Queue to hold the frontier.
+    A straight chain keeps this O(n) rather than O(n + edges)."""
+    if n <= 0:
+        return set()
+    graph = {i: [i + 1] for i in range(n - 1)}
+    graph[n - 1] = []
+
+    visited = {0}
+    q = Queue()
+    q.enqueue(0)
+    while not q.is_empty():
+        node = q.dequeue()
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                q.enqueue(neighbor)
+    return visited
+
+
 # Registry: maps the `algo` query-param value to its runner function,
 # a human-readable Big-O label, and a safe maximum n so the server
 # never gets stuck running something outrageous (e.g. fibonacci of
@@ -189,5 +251,25 @@ ALGORITHM_CONFIG = {
         "func": fibonacci_recursive,
         "complexity": "O(2^n)",
         "max_n": 32,
+    },
+    "stack_push_pop": {
+        "func": stack_push_pop,
+        "complexity": "O(n)",
+        "max_n": 100_000,
+    },
+    "stack_balanced_parentheses": {
+        "func": stack_balanced_parentheses,
+        "complexity": "O(n)",
+        "max_n": 100_000,
+    },
+    "queue_enqueue_dequeue": {
+        "func": queue_enqueue_dequeue,
+        "complexity": "O(n)",
+        "max_n": 100_000,
+    },
+    "queue_bfs_traversal": {
+        "func": queue_bfs_traversal,
+        "complexity": "O(n)",
+        "max_n": 100_000,
     },
 }

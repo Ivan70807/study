@@ -78,10 +78,56 @@ below).
 | `quick_sort` | O(n log n) average |
 | `matrix_multiplication` | O(n³) |
 | `fibonacci_recursive` | O(2ⁿ) |
+| `stack_push_pop` | O(n) |
+| `stack_balanced_parentheses` | O(n) |
+| `queue_enqueue_dequeue` | O(n) |
+| `queue_bfs_traversal` | O(n) |
 
 That's the 4 required algorithms (linear search, binary search,
-bubble sort, nested loops) plus 4 extra (merge sort, quick sort,
-matrix multiplication, naive recursive Fibonacci).
+bubble sort, nested loops), 4 extra sorting/math algorithms (merge
+sort, quick sort, matrix multiplication, naive recursive Fibonacci),
+and 4 more built on the custom `Stack`/`Queue` data structures below.
+
+## Stack and Queue data structures
+
+`stack.py` and `queue_ds.py` implement a classic `Stack` (LIFO) and
+`Queue` (FIFO) from scratch — `Stack` on top of a Python list,
+`Queue` on top of `collections.deque` so both ends stay O(1). (The
+queue file is named `queue_ds.py` rather than `queue.py` so it
+doesn't shadow Python's standard-library `queue` module.) Both raise
+a dedicated `StackEmptyError` / `QueueEmptyError` on `pop`/`dequeue`/
+`peek` of an empty structure, rather than a bare `IndexError`.
+
+Each has a full unit test suite covering ordering (LIFO/FIFO),
+`peek` (non-destructive), size/`len()` tracking, empty-structure
+errors, mixed data types, and a 10,000-item stress test:
+
+```bash
+python -m unittest test_stack.py test_queue.py -v
+# or, with pytest installed:
+pytest test_stack.py test_queue.py -v
+```
+
+Four algorithms in `algorithms.py` are built directly on these two
+structures, so their time complexity can be graphed through
+`/analyze` exactly like any other algorithm here:
+
+- **`stack_push_pop`** — push n items onto a `Stack`, then pop them
+  all back off. O(n).
+- **`stack_balanced_parentheses`** — build a balanced string of 2n
+  parentheses (`"(((...)))"`) and validate it with a `Stack`: push on
+  `(`, pop on `)`. The classic textbook use of a stack. O(n).
+- **`queue_enqueue_dequeue`** — enqueue n items onto a `Queue`, then
+  dequeue them all. O(n).
+- **`queue_bfs_traversal`** — breadth-first traversal of a simple
+  n-node chain graph, using a `Queue` to hold the BFS frontier. O(n).
+
+Try them, e.g.:
+
+```
+http://localhost:8000/analyze?algo=stack_push_pop&step=5000&n_max=100000
+http://localhost:8000/analyze?algo=queue_bfs_traversal&step=5000&n_max=100000
+```
 
 ## Safety limits
 
@@ -121,6 +167,10 @@ GUI-based plotting flow that doesn't work in a server process:
 time_complexity_visualizer/
 ├── app.py            # Flask server, /analyze and /algorithms routes
 ├── algorithms.py      # algorithm implementations + complexity/limit registry
+├── stack.py            # Stack (LIFO) data structure
+├── queue_ds.py         # Queue (FIFO) data structure
+├── test_stack.py        # Stack unit test suite
+├── test_queue.py        # Queue unit test suite
 ├── requirements.txt
 ├── README.md
 └── snapshots/          # PNG snapshots saved here on each /analyze call

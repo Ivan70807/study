@@ -1,16 +1,4 @@
 """
-Flask server for the time complexity visualizer.
-
-GET /analyze?algo=<name>&step=<int>&n_max=<int>
-    Runs <name> on input sizes 0, step, 2*step, ... up to n_max,
-    timing each run, plots the results with matplotlib, saves a PNG
-    snapshot to disk, and returns the timing data plus a base64
-    encoding of that same PNG.
-
-GET /algorithms
-    Lists the supported algorithm names, their Big-O complexity, and
-    the safe max n for each.
-
 Run with:  python app.py
 Then try:  http://localhost:8000/analyze?algo=linear_search&step=10&n_max=10000
 """
