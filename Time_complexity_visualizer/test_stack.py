@@ -1,4 +1,11 @@
+"""
+Unit tests for stack.Stack.
 
+Run with:
+    python -m unittest test_stack.py -v
+or, if pytest is installed:
+    pytest test_stack.py -v
+"""
 
 import unittest
 

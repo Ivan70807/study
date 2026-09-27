@@ -1,4 +1,11 @@
+"""
+Unit tests for queue_ds.Queue.
 
+Run with:
+    python -m unittest test_queue.py -v
+or, if pytest is installed:
+    pytest test_queue.py -v
+"""
 
 import unittest
 

@@ -1,3 +1,14 @@
+"""
+Stack data structure (LIFO — last in, first out), backed by a Python
+list.
+
+Every operation is O(1) except where noted:
+    push   — O(1) amortized
+    pop    — O(1)
+    peek   — O(1)
+    is_empty — O(1)
+    size     — O(1)
+"""
 
 
 class StackEmptyError(Exception):

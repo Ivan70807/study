@@ -1,3 +1,12 @@
+"""
+Algorithm implementations and their complexity metadata for the
+time complexity visualizer.
+
+Each "runner" function takes a single integer n, builds an input of
+that size, and runs the algorithm on it. Only the elapsed wall-clock
+time is used by the visualizer — return values are discarded by the
+caller.
+"""
 
 import random
 import sys
@@ -5,7 +14,8 @@ import sys
 from stack import Stack, StackEmptyError
 from queue_ds import Queue
 
-
+# A couple of the sorts below (quick_sort especially) can recurse
+# deeper than Python's default limit on larger inputs.
 sys.setrecursionlimit(10_000)
 
 

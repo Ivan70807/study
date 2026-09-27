@@ -1,3 +1,17 @@
+"""
+Queue data structure (FIFO — first in, first out), backed by
+collections.deque so both ends are O(1).
+
+(Named queue_ds.py rather than queue.py so it doesn't shadow Python's
+built-in `queue` module from the standard library.)
+
+Every operation is O(1):
+    enqueue  — O(1)
+    dequeue  — O(1)
+    peek     — O(1)
+    is_empty — O(1)
+    size     — O(1)
+"""
 
 from collections import deque
 

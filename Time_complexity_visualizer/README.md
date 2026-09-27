@@ -60,11 +60,74 @@ to `app.py`; `image_base64` is the same image encoded for direct use
 in a browser (`<img src="data:image/png;base64,...">`) or an API
 client.
 
+### `GET|POST /save_analysis`
+
+Same parameters as `/analyze` (`algo`, `step`, `n_max`), but instead
+of just returning the result, it's persisted as a row in a SQLite
+database via SQLAlchemy's ORM (see **Database** below). Returns the
+new row's `id`:
+
+```
+http://localhost:8000/save_analysis?algo=bubble_sort&step=100&n_max=1000
+```
+
+```json
+{
+  "message": "Analysis saved to the database.",
+  "id": 1,
+  "analysis": {
+    "id": 1,
+    "algo": "bubble_sort",
+    "complexity": "O(n^2)",
+    "n_min": 0,
+    "n_max": 1000,
+    "step": 100,
+    "points": [...],
+    "image_snapshot_path": "/path/to/snapshots/bubble_sort_....png",
+    "created_at": "2026-09-27T20:26:24.947875"
+  },
+  "warnings": []
+}
+```
+
+Note the `analysis` object here omits `image_base64` to keep the
+response small — fetch `GET /analyses/<id>` for the full image.
+
+### `GET /analyses`
+
+Lists every saved analysis (same shape as above, also without
+`image_base64`), newest first.
+
+### `GET /analyses/<id>`
+
+Fetches one saved analysis in full, including its `image_base64`.
+404s if the id doesn't exist.
+
+### `DELETE /analyses/<id>`
+
+Deletes one saved analysis. 404s if the id doesn't exist.
+
 ### `GET /algorithms`
 
 Lists every supported algorithm with its Big-O complexity and the
 safe maximum `n` the server allows for it (see **Safety limits**
 below).
+
+## Database
+
+Saved analyses (`/save_analysis`) are stored in a local SQLite
+database file, `analysis.db`, created automatically next to `app.py`
+the first time the server starts. All database access goes through
+**SQLAlchemy's ORM** — `database.py` sets up the engine/session, and
+`models.py` defines the `AnalysisResult` table as a plain Python
+class. There's no raw SQL anywhere in the app.
+
+To point this at a different database later (Postgres, MySQL, etc.),
+just change `DATABASE_URL` in `database.py` — nothing else needs to
+change, since all the queries go through the ORM.
+
+`analysis.db` is a generated file (like the PNGs in `snapshots/`), so
+it's excluded via `.gitignore` rather than committed to the repo.
 
 ## Supported algorithms
 
@@ -165,13 +228,16 @@ GUI-based plotting flow that doesn't work in a server process:
 
 ```
 time_complexity_visualizer/
-├── app.py            # Flask server, /analyze and /algorithms routes
+├── app.py            # Flask server: /analyze, /save_analysis, /analyses, /algorithms
 ├── algorithms.py      # algorithm implementations + complexity/limit registry
+├── database.py         # SQLAlchemy engine/session setup (SQLite)
+├── models.py            # SQLAlchemy ORM model: AnalysisResult
 ├── stack.py            # Stack (LIFO) data structure
 ├── queue_ds.py         # Queue (FIFO) data structure
 ├── test_stack.py        # Stack unit test suite
 ├── test_queue.py        # Queue unit test suite
 ├── requirements.txt
 ├── README.md
-└── snapshots/          # PNG snapshots saved here on each /analyze call
+├── analysis.db          # SQLite database (created on first run, gitignored)
+└── snapshots/          # PNG snapshots saved here on each /analyze or /save_analysis call
 ```
