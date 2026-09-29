@@ -3,7 +3,7 @@
 .venv-wsl/
 venv/
 env/
-
+requirements.txt
 # Python bytecode/caches
 __pycache__/
 *.pyc
