@@ -6,12 +6,18 @@ GET /analyze?algo=<name>&step=<int>&n_max=<int>
     timing each run, plots the results with matplotlib, saves a PNG
     snapshot to disk, and returns the timing data plus a base64
     encoding of that same PNG. Nothing is persisted beyond the PNG
-    file — this is a "run it and see" endpoint.
+    file — this is a "run it and see" endpoint. Public, no auth.
+
+POST /login
+    {"username": ..., "password": ...} -> a JWT access token, used to
+    authenticate the endpoint below. See auth.py.
 
 GET|POST /save_analysis?algo=<name>&step=<int>&n_max=<int>
     Same run as /analyze, but the full result (timings, chart, image)
     is saved as a row in a SQLite database (via SQLAlchemy) instead
-    of just being returned. Returns the new row's id.
+    of just being returned. Requires a valid JWT: send the token from
+    /login as an `Authorization: Bearer <token>` request header. A
+    request with no token, or an invalid/expired one, gets a 401.
 
 GET /analyses
     Lists every saved analysis (without the base64 image, to keep the
@@ -43,13 +49,17 @@ matplotlib.use("Agg")  # headless backend — there is no display in a server pr
 import matplotlib.pyplot as plt
 
 from flask import Flask, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from algorithms import ALGORITHM_CONFIG
+from auth import auth_bp, init_jwt
 from database import SessionLocal, init_db
 from models import AnalysisResult
 
 app = Flask(__name__)
 init_db()
+init_jwt(app)
+app.register_blueprint(auth_bp)
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "snapshots")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -183,10 +193,15 @@ def analyze():
 
 
 @app.route("/save_analysis", methods=["GET", "POST"])
+@jwt_required()
 def save_analysis():
     """Run an analysis (same params as /analyze) and persist the full
     result — timings, complexity, and the chart — as a row in the
-    database via SQLAlchemy, instead of just returning it."""
+    database via SQLAlchemy, instead of just returning it.
+
+    Requires a valid JWT: send it as `Authorization: Bearer <token>`.
+    Get a token from POST /login first.
+    """
     args = request.values  # works for both query string and form/JSON-as-form POSTs
     result, error = _run_analysis(
         args.get("algo", ""),
@@ -207,6 +222,7 @@ def save_analysis():
             points=result["points"],
             image_base64=result["image_base64"],
             image_snapshot_path=result["image_snapshot_path"],
+            created_by=get_jwt_identity(),
         )
         session.add(record)
         session.commit()

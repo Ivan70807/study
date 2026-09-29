@@ -60,16 +60,54 @@ to `app.py`; `image_base64` is the same image encoded for direct use
 in a browser (`<img src="data:image/png;base64,...">`) or an API
 client.
 
-### `GET|POST /save_analysis`
+### `POST /login`
+
+Exchange a username/password for a JWT access token, needed to call
+`/save_analysis` (see below). This is a small demo user store
+(`DEMO_USERS` in `auth.py`), not a real user database:
+
+| username | password |
+|---|---|
+| `admin` | `admin123` |
+| `ivan` | `password123` |
+
+```bash
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+```
+
+The token comes back both in the JSON body (`access_token`) and in
+the response's `Authorization` header. To call a protected endpoint,
+send that same value back as a **request** header — not a query
+parameter:
+
+```
+Authorization: Bearer <token>
+```
+
+Tokens expire after 1 hour (`JWT_ACCESS_TOKEN_EXPIRES` in `auth.py`).
+
+### `GET|POST /save_analysis` 🔒 requires a valid JWT
 
 Same parameters as `/analyze` (`algo`, `step`, `n_max`), but instead
 of just returning the result, it's persisted as a row in a SQLite
-database via SQLAlchemy's ORM (see **Database** below). Returns the
-new row's `id`:
+database via SQLAlchemy's ORM (see **Database** below). Requires the
+`Authorization: Bearer <token>` header from `/login`:
 
+```bash
+curl "http://localhost:8000/save_analysis?algo=bubble_sort&step=100&n_max=1000" \
+  -H "Authorization: Bearer <token>"
 ```
-http://localhost:8000/save_analysis?algo=bubble_sort&step=100&n_max=1000
+
+A request with no token, a malformed one, or an expired one gets:
+
+```json
+{"error": "I don't know you.", "message": "Bye."}
 ```
+with HTTP status `401`.
+
+Returns the new row's `id`:
 
 ```json
 {
@@ -84,6 +122,7 @@ http://localhost:8000/save_analysis?algo=bubble_sort&step=100&n_max=1000
     "step": 100,
     "points": [...],
     "image_snapshot_path": "/path/to/snapshots/bubble_sort_....png",
+    "created_by": "admin",
     "created_at": "2026-09-27T20:26:24.947875"
   },
   "warnings": []
@@ -92,6 +131,7 @@ http://localhost:8000/save_analysis?algo=bubble_sort&step=100&n_max=1000
 
 Note the `analysis` object here omits `image_base64` to keep the
 response small — fetch `GET /analyses/<id>` for the full image.
+`created_by` records the identity from the JWT (i.e. who saved it).
 
 ### `GET /analyses`
 
@@ -128,6 +168,20 @@ change, since all the queries go through the ORM.
 
 `analysis.db` is a generated file (like the PNGs in `snapshots/`), so
 it's excluded via `.gitignore` rather than committed to the repo.
+
+If you already had an `analysis.db` from before `created_by` was
+added to the schema, delete that file and let the server recreate it
+on next startup — SQLAlchemy's `create_all()` only creates tables
+that don't exist yet, it won't alter an existing one.
+
+## Authentication
+
+⚠️ `auth.py`'s `JWT_SECRET_KEY` has a hardcoded development default
+and `DEMO_USERS` are plaintext in source — both are fine for a local
+project like this, but neither belongs in a real deployment. Set
+`JWT_SECRET_KEY` as an environment variable and replace `DEMO_USERS`
+with a real user table (with hashed passwords) before this goes
+anywhere public.
 
 ## Supported algorithms
 
@@ -230,6 +284,7 @@ GUI-based plotting flow that doesn't work in a server process:
 time_complexity_visualizer/
 ├── app.py            # Flask server: /analyze, /save_analysis, /analyses, /algorithms
 ├── algorithms.py      # algorithm implementations + complexity/limit registry
+├── auth.py              # JWT setup + POST /login (Flask-JWT-Extended)
 ├── database.py         # SQLAlchemy engine/session setup (SQLite)
 ├── models.py            # SQLAlchemy ORM model: AnalysisResult
 ├── stack.py            # Stack (LIFO) data structure

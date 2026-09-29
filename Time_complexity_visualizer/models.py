@@ -28,6 +28,7 @@ class AnalysisResult(Base):
     points = Column(JSON, nullable=False)  # list of {"n": ..., "time_seconds": ...}
     image_base64 = Column(Text, nullable=False)
     image_snapshot_path = Column(String(500), nullable=True)
+    created_by = Column(String(100), nullable=True)  # JWT identity of the user who saved it
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self, include_image=True):
@@ -45,6 +46,7 @@ class AnalysisResult(Base):
             "step": self.step,
             "points": self.points,
             "image_snapshot_path": self.image_snapshot_path,
+            "created_by": self.created_by,
             "created_at": self.created_at.isoformat(),
         }
         if include_image:
